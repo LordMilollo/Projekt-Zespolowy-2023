@@ -19,7 +19,7 @@ void setup()
   size(320, 320); //size okna
   myPort = new Serial(this, "COM5", 921600);                    // u mnie COM5
 
-  // wait for full frame of bytes
+ 
   myPort.buffer(bytesPerFrame);  
   myImage = createImage(cameraWidth, cameraHeight, GRAY);
   
@@ -52,31 +52,31 @@ void serialEvent(Serial myPort) {
      result = 0;
   }
   if (read ==1) {
-    // wczytanie bajtow
+    
     myPort.readBytes(frameBuffer);
     
-    // dostep raw bajtow do bajtow buffera
+    
     ByteBuffer bb = ByteBuffer.wrap(frameBuffer);
     bb.order(ByteOrder.BIG_ENDIAN);
     int i = 0;
     while (bb.hasRemaining()) {
       
-      // czytanie 16-bit pixeli
+      
       short p = bb.getShort();
       int p1 = (p>>8)&0xFF;
       int p2 = p&0xFF;
-      // convert RGB565 na RGB 24-bit
+      
       int r = p1;//((p >> 11) & 0x1f) << 3;
       int g = p1;//((p >> 5) & 0x3f) << 2;
       int b = p1;//((p >> 0) & 0x1f) << 3;
 
-      // ustawienie koloru pixeli
+      
       myImage .pixels[i++] = color(r, g, b);
       r = p2;//((p >> 11) & 0x1f) << 3;
       g = p2;//((p >> 5) & 0x3f) << 2;
       b = p2;//((p >> 0) & 0x1f) << 3;
 
-      // ustawienie koloru pixeli
+      
       myImage .pixels[i++] = color(r, g, b);
     }
     read = 0;
