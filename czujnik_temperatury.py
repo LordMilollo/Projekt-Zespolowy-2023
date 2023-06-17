@@ -1,6 +1,7 @@
 import utime
 from rp2 import PIO, asm_pio
 from machine import Pin
+from twilio.rest import Client
 
 DHT11_PIN = 15
 DELAY = 100
@@ -91,10 +92,39 @@ class DHT11Sensor:
 
 dht11 = DHT11Sensor(Pin(DHT11_PIN))
 
+is_temp_sms_sent = False
+is_hum_sms_sent = False
+
 while True:
+    is_sms_sent = False
     temperature, humidity = dht11.read_data()
     if temperature is None:
         print("Wystąpił błąd")
+
     else:
-        print('Temperatura: ', temperature, '\'C', ' Wilgotność powietrza: ', humidity, '%')
-    utime.sleep(3)
+        print('Temperatura: ', temperature, '°C', ' Wilgotność powietrza: ', humidity, '%')
+        utime.sleep(3)
+
+    if temperature > 40:
+        while not is_temp_sms_sent:
+            is_temp_sms_sent = True
+            account_sid = "AC74df43473c214b4cb92f7f8f2daa050d"
+            auth_token = "f5a625baecba793e98efc191bc1ba714"
+            client = Client(account_sid, auth_token)
+            message = client.messages.create(
+                body='Uwaga! Zarejestrowano wysoką temperaturę: '+str(temperature)+'°C',
+                from_='+14066257191',
+                to='+48<numer_telefonu>'
+            )
+
+    if humidity > 85:
+        while not is_hum_sms_sent:
+            is_hum_sms_sent = True
+            account_sid = "AC74df43473c214b4cb92f7f8f2daa050d"
+            auth_token = "f5a625baecba793e98efc191bc1ba714"
+            client = Client(account_sid, auth_token)
+            message = client.messages.create(
+                body='Uwaga! Zarejestrowano wysoką wilgotność: '+str(humidity)+'%',
+                from_='+14066257191',
+                to='+48<numer_telefonu>'
+            )
