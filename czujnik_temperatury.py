@@ -109,22 +109,22 @@ while True:
         while not is_temp_sms_sent:
             is_temp_sms_sent = True
             account_sid = "AC74df43473c214b4cb92f7f8f2daa050d"
-            auth_token = "f5a625baecba793e98efc191bc1ba714"
+            auth_token = "f5a625baecba793e98efc191bc1ba714"  # zmienić na 1f012429fd3146f7895738229f71dcf6
             client = Client(account_sid, auth_token)
             message = client.messages.create(
-                body='Uwaga! Zarejestrowano wysoką temperaturę: '+str(temperature)+'°C',
+                body='Uwaga! Zarejestrowano wysoką temperaturę: ' + str(temperature) + '°C',
                 from_='+14066257191',
-                to='+48<numer_telefonu>'
+                to='+48<numer_telefonu>'  # wstawić numer telefonu
             )
 
     if humidity > 85:
         while not is_hum_sms_sent:
             is_hum_sms_sent = True
             account_sid = "AC74df43473c214b4cb92f7f8f2daa050d"
-            auth_token = "f5a625baecba793e98efc191bc1ba714"
+            auth_token = "f5a625baecba793e98efc191bc1ba714"  # zmienić na 1f012429fd3146f7895738229f71dcf6
             client = Client(account_sid, auth_token)
             message = client.messages.create(
-                body='Uwaga! Zarejestrowano wysoką wilgotność: '+str(humidity)+'%',
+                body='Uwaga! Zarejestrowano wysoką wilgotność: ' + str(humidity) + '%',
                 from_='+14066257191',
-                to='+48<numer_telefonu>'
+                to='+48<numer_telefonu>'  # wstawić numer telefonu
             )
