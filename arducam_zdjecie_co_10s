@@ -1,63 +1,103 @@
-#include <stdio.h>
-#include "pico/stdlib.h"
-#include "arducampico.h"
+import processing.serial.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-#define IMAGE_WIDTH 96
-#define IMAGE_HEIGHT 96
-#define IMAGE_SIZE (IMAGE_WIDTH * IMAGE_HEIGHT)
+Serial myPort;
+final int cameraWidth = 96;
+final int cameraHeight = 96;
+final int cameraBytesPerPixel = 1;
+final int bytesPerFrame = cameraWidth * cameraHeight * cameraBytesPerPixel;
 
-uint8_t header[2] = {0x55, 0xAA};
-uint8_t image[IMAGE_SIZE] = {0};
-struct arducam_config config;
+PImage myImage;
+byte[] frameBuffer = new byte[bytesPerFrame];
+byte[] header = new byte[3];
+byte[] score = new byte[2];
 
-bool captureInProgress = false;
-uint32_t captureStartTime = 0;
+boolean captureScreen = false;
+int captureTimer = 0;
+final int captureInterval = 10000;
 
-void captureAndSaveImage() {
-  arducam_capture_frame(&config, image);
-
-  char filename[20];
-  snprintf(filename, sizeof(filename), "/image_%lu.bin", time(NULL));
-  FILE* file = fopen(filename, "wb");
-  if (file) {
-    fwrite(header, sizeof(uint8_t), 2, file);
-    fwrite(image, sizeof(uint8_t), IMAGE_SIZE, file);
-    fclose(file);
-  }
-}
+String screenshotFolderPath = "C:/kamera_zdjecia/";
 
 void setup() {
-  stdio_init_all();
+  size(320, 320);
+  myPort = new Serial(this, "COM5", 921600);
 
-  gpio_init(PIN_LED);
-  gpio_set_dir(PIN_LED, GPIO_OUT);
+  myPort.buffer(bytesPerFrame);
+  myImage = createImage(cameraWidth, cameraHeight, GRAY);
 
-  config.sccb = i2c0;
-  config.sccb_mode = I2C_MODE_16_8;
-  config.sensor_address = 0x24;
-  config.pin_sioc = PIN_CAM_SIOC;
-  config.pin_siod = PIN_CAM_SIOD;
-  config.pin_resetb = PIN_CAM_RESETB;
-  config.pin_xclk = PIN_CAM_XCLK;
-  config.pin_vsync = PIN_CAM_VSYNC;
-  config.pin_y2_pio_base = PIN_CAM_Y2_PIO_BASE;
-  config.pio = pio0;
-  config.pio_sm = 0;
-  config.dma_channel = 0;
-  arducam_init(&config);
+  fill(255, 0, 0);
 }
 
-void loop() {
-  if (!captureInProgress) {
-    
-    captureInProgress = true;
-    gpio_put(PIN_LED, 1);
+void draw() {
+  image(myImage, 0, 0, 320, 320);
 
-    captureAndSaveImage();
-
-    gpio_put(PIN_LED, 0);
-    captureInProgress = false;
-
-    sleep_ms(10000);
+  if (captureScreen) {
+    if (millis() - captureTimer >= captureInterval) {
+      captureTimer = millis();
+      saveScreenshot();
+    }
+    captureScreen = false;
   }
+}
+
+int state = 0;
+int read = 0;
+int result = 0;
+int startbyte;
+
+void serialEvent(Serial myPort) {
+  if (read == 0) {
+    startbyte = myPort.read();
+    if (startbyte == 0x55) {
+      state = 1;
+    }
+    if (startbyte == 0xAA && state == 1) {
+      read = 1;
+    }
+    if (startbyte == 0xBB && state == 1) {
+      result = 1;
+    }
+  }
+  if (result == 1) {
+    myPort.readBytes(score);
+    result = 0;
+  }
+  if (read == 1) {
+    myPort.readBytes(frameBuffer);
+
+    ByteBuffer bb = ByteBuffer.wrap(frameBuffer);
+    bb.order(ByteOrder.BIG_ENDIAN);
+    int i = 0;
+    while (bb.hasRemaining()) {
+      short p = bb.getShort();
+      int p1 = (p >> 8) & 0xFF;
+      int p2 = p & 0xFF;
+
+      int r = p1;
+      int g = p1;
+      int b = p1;
+
+      myImage.pixels[i++] = color(r, g, b);
+      r = p2;
+      g = p2;
+      b = p2;
+
+      myImage.pixels[i++] = color(r, g, b);
+    }
+    read = 0;
+
+    captureScreen = true;
+  }
+  myImage.updatePixels();
+}
+
+void saveScreenshot() {
+  SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+  String timestamp = dateFormat.format(new Date());
+  String screenshotPath = screenshotFolderPath + "screenshot_" + timestamp + ".png";
+  saveFrame(screenshotPath);
 }
