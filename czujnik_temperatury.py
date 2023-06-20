@@ -1,3 +1,10 @@
+try:
+    import urequests as requests
+except:
+    import requests
+
+import network
+import gc
 import utime
 from rp2 import PIO, asm_pio
 from machine import Pin
@@ -92,6 +99,48 @@ class DHT11Sensor:
 
 dht11 = DHT11Sensor(Pin(DHT11_PIN))
 
+gc.collect()
+
+def send_sms(recipient, sender,
+             message, auth_token, account_sid):
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    data = "To={}&From={}&Body={}".format(recipient, sender, message)
+    url = "https://api.twilio.com/2010-04-01/Accounts/{}/Messages.json".format(account_sid)
+
+    print("Trying to send SMS with Twilio")
+
+    response = requests.post(url,
+                             data=data,
+                             auth=(account_sid, auth_token),
+                             headers=headers)
+
+    if response.status_code == 201:
+        print("SMS sent!")
+    else:
+        print("Error sending SMS: {}".format(response.text))
+
+    response.close()
+
+
+def connect_wifi(ssid, password):
+    station = network.WLAN(network.STA_IF)
+    station.active(True)
+    station.connect(ssid, password)
+    while station.isconnected() == False:
+        pass
+    print('Connection successful')
+    print(station.ifconfig())
+
+ssid = 'super_projekt'
+password = 'kappa123'
+
+account_sid = 'AC74df43473c214b4cb92f7f8f2daa050dD'
+auth_token = '1f012429fd3146f7895738229f71dcf6'
+recipient_num = '724367657'
+sender_num = '14066257191'
+
+connect_wifi(ssid, password)
+
 is_temp_sms_sent = False
 is_hum_sms_sent = False
 
@@ -107,24 +156,10 @@ while True:
 
     if temperature > 40:
         while not is_temp_sms_sent:
-            is_temp_sms_sent = True
-            account_sid = "AC74df43473c214b4cb92f7f8f2daa050d"
-            auth_token = "f5a625baecba793e98efc191bc1ba714"  # zmienić na 1f012429fd3146f7895738229f71dcf6
-            client = Client(account_sid, auth_token)
-            message = client.messages.create(
-                body='Uwaga! Zarejestrowano wysoką temperaturę: ' + str(temperature) + '°C',
-                from_='+14066257191',
-                to='+48<numer_telefonu>'  # wstawić numer telefonu
-            )
+            message = "Uwaga! Zarejestrowano wysoką temperaturę" + str(temperature) + '°C'
+            send_sms(recipient_num, sender_num, message, auth_token, account_sid)
 
     if humidity > 85:
         while not is_hum_sms_sent:
-            is_hum_sms_sent = True
-            account_sid = "AC74df43473c214b4cb92f7f8f2daa050d"
-            auth_token = "f5a625baecba793e98efc191bc1ba714"  # zmienić na 1f012429fd3146f7895738229f71dcf6
-            client = Client(account_sid, auth_token)
-            message = client.messages.create(
-                body='Uwaga! Zarejestrowano wysoką wilgotność: ' + str(humidity) + '%',
-                from_='+14066257191',
-                to='+48<numer_telefonu>'  # wstawić numer telefonu
-            )
+        message='Uwaga! Zarejestrowano wysoką wilgotność: ' + str(humidity) + '%'
+        send_sms(recipient_num, sender_num, message, auth_token, account_sid)
