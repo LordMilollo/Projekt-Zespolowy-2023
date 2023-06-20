@@ -1,0 +1,25 @@
+Czujnik dymu
+https://peppe8o.com/mq-2-with-raspberry-pi-pico-gas-sensor-wiring-and-micropython-code/
+AOUT - wyjście analogowe, pin 31
+VCC - zasilanie 3.3V, pin 36
+GND - uziemienie, pin 38
+
+Czujnik temperatury i wilgotności
+https://www.waveshare.com/wiki/DHT11_Temperature-Humidity_Sensor
+VCC - zasilanie 3.3V, pin 36
+GMD / GND - uziemienie, pin 38
+DOUT - wyjście cyfrowe, pin 34
+S = DOUT
+“ - ”= GROUND
+VCC = środek
+
+Kamera ArduCam
+https://docs.arducam.com/Arduino-SPI-camera/Legacy-SPI-camera/Pico/Camera-Module/Arducam-HM0360-VGA-Camera-Module/
+GND - uziemienie, pin 38
+D0 - wyjście cyfrowe, pin 09
+PCLK - pin 19 
+HREF - pin 20
+VSYNC - pin 21
+SDA - pin 06
+SCL - pin 07
+VCC - zasilanie 3.3V, pin 36
